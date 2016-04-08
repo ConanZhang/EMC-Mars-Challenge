@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import dateutil.parser
 import json
 import requests
 import threading
@@ -12,10 +13,11 @@ global_things = {
     'WS_URL'    : None,
     'TEAMNAME'  : None,
     'TEAMAUTH'  : None,
+    'LASTTIME'  : None,
 }
 
 def activate_shield(turn_shield_on):
-    url  = "{base}/shield/{toggle}".format(base=API_URL, toggle='enable' if turn_shield_on else 'disable')
+    url  = "{base}/shield/{toggle}".format(base=global_things['API_URL'], toggle='enable' if turn_shield_on else 'disable')
     auth = {'X-Auth-Token': global_things['TEAMAUTH']}
     response = requests.post(url, headers=auth)
 
@@ -72,15 +74,22 @@ def build_log_data(info):
     result['radiation']     = info['readings']['radiation']
     return result
 
-def strategize(shields_on):
+def strategize(shields_on, timestamp):
     print("Shields are currently: {}".format('on' if shields_on else 'off'))
+    lasttime = global_things['LASTTIME']
+    if lasttime is None:
+        global_things['LASTTIME'] = timestamp
+    else:
+        if (timestamp - lasttime).total_seconds() > 10:
+            activate_shield(not shields_on)
+            global_things['LASTTIME'] = timestamp
 
 def receive_message(ws, message):
     data      = json.loads(message)
     log_data  = build_log_data(data)
     write_data_to_log(log_data)
     display_info(data)
-    ts = threading.Thread(target=strategize, args=[get_team_info(data)['shield']])
+    ts = threading.Thread(target=strategize, args=[get_team_info(data)['shield'], dateutil.parser.parse(data['timestamp'])])
     ts.start()
 
 def receive_error(ws, error):
