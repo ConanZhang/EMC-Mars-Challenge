@@ -7,6 +7,7 @@ client = MongoClient('mongodb://107.170.244.164/', 27017)
 db = client.mars_db
 game_coll = db.game_data
 sensor_coll = db.sensor_data
+log_coll = db.log_data
 
 
 # Inserts the json data into the sensor_data collection
@@ -80,3 +81,14 @@ def sensor_get_threshold(rad, temp, flare):
 def sensor_reset():
     sensor_coll.drop()
 
+
+def log_insert(json_data):
+    log_coll.insert_one(json_data)
+
+
+def log_get(json_query):
+    log_coll.find(json_query)
+
+
+def log_get_all():
+    log_coll.find()
