@@ -7,6 +7,7 @@ import requests
 import threading
 import time
 import websocket
+import db
 
 global_things = {
     'API_URL'   : None,
@@ -64,7 +65,8 @@ def display_info(info):
     ))
 
 def write_data_to_log(data):
-    pass
+    # Log to system
+    db.game_insert(data)
 
 def build_log_data(info):
     result = {}
