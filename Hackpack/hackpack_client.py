@@ -76,7 +76,7 @@ def display_info(info):
     print(msg)
 
 def log(data):
-    db.log_insert({"time": time.time, "message": data})
+    db.log_insert({"time": time.time(), "message": data})
 
 def write_data_to_log(data):
     # Log to system
