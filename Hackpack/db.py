@@ -9,11 +9,23 @@ game_coll = db.game_data
 sensor_coll = db.sensor_data
 log_coll = db.log_data
 
+db2 = client.mars_db2
+game_coll2 = db2.game_data
+sensor_coll2 = db2.sensor_data
+log_coll2 = db2.log_data
+
+db3 = client.mars_db3
+game_coll3 = db3.game_data
+sensor_coll3 = db3.sensor_data
+log_coll3 = db3.log_data
+
 
 # Inserts the json data into the sensor_data collection
 # Returns the inserted_id
 def game_insert(json_data):
     result = game_coll.insert_one(json_data)
+    game_coll2.insert_one(json_data)
+    game_coll3.insert_one(json_data)
     return result.inserted_id
 
 
@@ -50,6 +62,8 @@ def game_reset():
 # Returns the inserted_id
 def sensor_insert(json_data):
     result = sensor_coll.insert_one(json_data)
+    sensor_coll2.insert_one(json_data)
+    sensor_coll3.insert_one(json_data)
     return result.inserted_id
 
 
@@ -84,6 +98,8 @@ def sensor_reset():
 
 def log_insert(json_data):
     log_coll.insert_one(json_data)
+    log_coll2.insert_one(json_data)
+    log_coll3.insert_one(json_data)
 
 
 def log_get(json_query):
