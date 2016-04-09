@@ -7,6 +7,7 @@ import requests
 import threading
 import time
 import websocket
+import db
 
 global_things = {
     'API_URL'   : None,
@@ -23,27 +24,36 @@ def activate_shield(turn_shield_on):
 
     if response.status_code == 200:
         if turn_shield_on:
+            log("Enabled shield")
             print("Enabled shield!")
         else:
+            log("Disabled shield")
             print("Disabled shield.")
     elif response.status_code == 400:
         if turn_shield_on:
+            log("Could not enable shield.")
             raise RuntimeError("Could not enable shield.")
         else:
+            log("Could not disable shield.")
             raise RuntimeError("Could not disable shield.")
     else:
+        log("Error during shield toggling")
         raise RuntimeError("Error during shield toggling.")
 
 def register_team():
+    log("TEAMNAME: {}".format(global_things['TEAMNAME']))
     print("TEAMNAME: {}".format(global_things['TEAMNAME']))
     response = requests.post(global_things['API_URL'] + '/join/' + global_things['TEAMNAME'], data='')
     global_things['TEAMAUTH'] = response.text
 
     if response.status_code == 200:
+        log("Joined the game. Auth code: {}".format(global_things['TEAMAUTH']))
         print("Joined the game. Auth code: {}".format(global_things['TEAMAUTH']))
     elif response.status_code == 400:
+        log({"Team already exists"})
         raise RuntimeError("Team already exists.")
     else:
+        log("Error during team registration")
         raise RuntimeError("Error during team registration.")
 
 def get_team_info(info):
@@ -56,15 +66,21 @@ def display_info(info):
     team_info = get_team_info(info)
     if team_info is None:
         return
-    print("{}  Life: {:<3}%  Energy: {:<3}%  Shield: {}".format(
+    msg = "{}  Life: {:<3}%  Energy: {:<3}%  Shield: {}".format(
         info['timestamp'],
         team_info['life'],
         team_info['energy'],
-        'on' if team_info['shield'] else 'off'
-    ))
+        'on' if team_info['shield'] else 'off')
+
+    log(msg)
+    print(msg)
+
+def log(data):
+    db.log_insert({"time": time.time, "message": data})
 
 def write_data_to_log(data):
-    pass
+    # Log to system
+    db.game_insert(data)
 
 def build_log_data(info):
     result = {}
@@ -75,6 +91,7 @@ def build_log_data(info):
     return result
 
 def strategize(shields_on, timestamp):
+    log("Shields are currently: {}".format('on' if shields_on else 'off'))
     print("Shields are currently: {}".format('on' if shields_on else 'off'))
     lasttime = global_things['LASTTIME']
     if lasttime is None:
@@ -93,9 +110,11 @@ def receive_message(ws, message):
     ts.start()
 
 def receive_error(ws, error):
+    log("Error: {}".format(error))
     print("Error: {}".format(error))
 
 def connection_closed(ws):
+    log("Connection closed.")
     print("Connection closed.")
 
 def open_connection(ws):
@@ -107,6 +126,10 @@ def main(api_url, ws_url, teamname):
     global_things['API_URL']  = api_url
     global_things['WS_URL']   = ws_url
     global_things['TEAMNAME'] = teamname
+
+    log("API Url:  {}".format(global_things['API_URL']))
+    log("WS Url:   {}".format(global_things['WS_URL']))
+    log("Teamname: {}".format(global_things['TEAMNAME']))
     print("API Url:  {}".format(global_things['API_URL']))
     print("WS Url:   {}".format(global_things['WS_URL']))
     print("Teamname: {}".format(global_things['TEAMNAME']))
@@ -124,6 +147,7 @@ def main(api_url, ws_url, teamname):
     try:
         ws.run_forever()
     except KeyboardInterrupt:
+        log("Terminating")
         print("Terminating")
 
 if __name__ == '__main__':
